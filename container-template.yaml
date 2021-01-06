@@ -1,0 +1,61 @@
+# Copyright (c) 2021, Ernest Borowski, All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+#
+# Author: Ernest Borowski <e.borowski+git@protonmail.com>
+#
+
+architecture: x86_64
+config:
+  environment.DISPLAY: :0
+  environment.PULSE_SERVER: unix:/home/ubuntu/pulse-native
+  linux.kernel_modules: nbd
+  raw.lxc: |
+    lxc.apparmor.profile=unconfined
+    lxc.mount.auto=proc:rw sys:rw cgroup:rw
+    lxc.cgroup.devices.allow=a
+    lxc.cap.drop=
+  security.nesting: "true"
+  security.privileged: "true"
+  user.user-data: |
+    runcmd:
+      - 'sed -i "s/; enable-shm = yes/enable-shm = no/g" /etc/pulse/client.conf'
+devices:
+  PASocket1:
+    bind: container
+    connect: unix:/run/user/1000/pulse/native
+    gid: "1000"
+    listen: unix:/home/ubuntu/pulse-native
+    mode: "0777"
+    security.gid: "1000"
+    security.uid: "1000"
+    type: proxy
+    uid: "1000"
+  X0:
+    bind: container
+    connect: unix:@/tmp/.X11-unix/X0
+    listen: unix:@/tmp/.X11-unix/X0
+    security.gid: "1000"
+    security.uid: "1000"
+    type: proxy
+  kvm:
+    path: /dev/kvm
+    type: unix-char
+  mygpu:
+    type: gpu
+  nbd:
+    path: /dev/nbd0
+    type: unix-block
+ephemeral: false
+description: ""
