@@ -1,0 +1,48 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Docker BuildX
+        uses: docker/build-push-action@v1
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          content:
+            file: ./ci/Dockerfile
+            load: true
+            tags: tizen-emulator-test:latest
+      - name: Check shell Scripts
+        run: docker run tizen-emulator-test -v $(pwd):/project -w /project bash ".ci/run-shell-check.sh"
+      #    - name: Build the Docker image
+      #      uses: actions/checkout@v2
+      #      run: docker build . --file ci/Dockerfile --tag tizen-emulator-test:$(date +%s)
+      #    - name: Checks shell scripts
+      #      uses: actions/checkout@v2
+      #      run: docker exec tizen-emulator-test:$(date +%s) 
+
+  check-trailing-whitespace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: checks trailing whitespace
+        run: bash ci/run-find-trailing-whitespace.sh
+
+  check-license:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: checks license files
+        run: python3 ci/check_license.py -a -d -c
