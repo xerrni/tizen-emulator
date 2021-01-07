@@ -186,11 +186,15 @@ def process_files(repair_files, check_all_files, display_diff, colorize_output):
                     # it may have more authors because file could be e.g. renamed, merged etc
                     only_more_authors = True
                     CHANGED_LINE_RE=r'^[-+?!] .*'
-                    AUTHOR_LINE_RE=r'- #?\s+Author: '
+                    AUTHOR_LINE_RE=r'- # Author: .*<.*>.*$'
                     comp_changed = re.compile(CHANGED_LINE_RE)
                     comp_author = re.compile(AUTHOR_LINE_RE)
-                    for line in diff:
-                        if comp_changed.match(line) and (not comp_author.match(line)):
+                    diff_len = len(diff) - 1 # last line contains diff lines numbers
+                    for it in range(0, diff_len):
+                        if comp_changed.match(diff[it]) and (not comp_author.match(diff[it])):
+                            # does not treat last empty line as error
+                            if it == diff_len - 1 and (len(diff[it]) <= 2 or diff[it] == '- \n'):
+                                break
                             only_more_authors = False
                             break
                     if only_more_authors:
@@ -205,8 +209,10 @@ def process_files(repair_files, check_all_files, display_diff, colorize_output):
     for wlf in wrong_license_files:
         print("File with wrong license: {}".format(wlf))
         got_error = True
-    for tf in tmp_files:
-        os.remove(tf)
+    # when repairing files temporary files are moved to original ones
+    if not repair_files:
+        for tf in tmp_files:
+            os.remove(tf)
     if got_error:
         exit(1)
 
